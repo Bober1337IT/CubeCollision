@@ -350,6 +350,7 @@ fun Main() {
                         v2Text = "0.0"
                         m1Text = "1.0"
                         m2Text = "1.0"
+                        collisionCounter = 0
                         started = false
                     },
                     modifier = Modifier
