@@ -267,7 +267,7 @@ fun Main() {
                 drawContext.canvas.nativeCanvas.drawText(
                     "<- $canvasWidthMeters meters ->",
                     canvasWidth / 2,
-                    canvasHeight - 100f,
+                    canvasHeight - 80f,
                     paintSize
                 )
 
@@ -415,7 +415,11 @@ fun Main() {
                         onValueChange = {
                             lengthCube1Text = it
                             it.robustToFloat()?.let { l ->
-                                cube1 = cube1.copy(x = (l * metersToPx - cubeSize1 / 2).coerceIn(0f, (canvasSize.width - cubeSize1).coerceAtLeast(0f)))
+                                // Ensures the cube is within the canvas bounds and not overlapping the other cube
+                                val newX = (l * metersToPx - cubeSize1 / 2).coerceIn(0f, (canvasSize.width - cubeSize1).coerceAtLeast(0f))
+                                if (newX + cubeSize1 <= cube2.x || newX >= cube2.x + cubeSize2) {
+                                    cube1 = cube1.copy(x = newX)
+                                }
                             }
                         },
                         enabled = !started
@@ -431,7 +435,11 @@ fun Main() {
                         onValueChange = {
                             lengthCube2Text = it
                             it.robustToFloat()?.let { l ->
-                                cube2 = cube2.copy(x = (l * metersToPx - cubeSize2 / 2).coerceIn(0f, (canvasSize.width - cubeSize2).coerceAtLeast(0f)))
+                                // Ensures the cube is within the canvas bounds and not overlapping the other cube
+                                val newX = (l * metersToPx - cubeSize2 / 2).coerceIn(0f, (canvasSize.width - cubeSize2).coerceAtLeast(0f))
+                                if (newX + cubeSize2 <= cube1.x || newX >= cube1.x + cubeSize1) {
+                                    cube2 = cube2.copy(x = newX)
+                                }
                             }
                         },
                         enabled = !started
@@ -512,18 +520,19 @@ fun Main() {
                             return@Button
                         }
 
-                        // Update simulation state with validated values and wall constraints
+                        // Calculate target positions and check for placement overlap
+                        val targetX1 = (l1 * metersToPx - cubeSize1 / 2).coerceIn(0f, (canvasSize.width - cubeSize1).coerceAtLeast(0f))
+                        val targetX2 = (l2 * metersToPx - cubeSize2 / 2).coerceIn(0f, (canvasSize.width - cubeSize2).coerceAtLeast(0f))
+
+                        if (!(targetX1 + cubeSize1 <= targetX2 || targetX1 >= targetX2 + cubeSize2)) {
+                            Toast.makeText(context, "Cubes cannot overlap", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        // Update simulation state with validated values
                         friction = f
-                        cube1 = cube1.copy(
-                            x = (l1 * metersToPx - cubeSize1 / 2).coerceIn(0f, (canvasSize.width - cubeSize1).coerceAtLeast(0f)),
-                            velocity = v1,
-                            mass = m1
-                        )
-                        cube2 = cube2.copy(
-                            x = (l2 * metersToPx - cubeSize2 / 2).coerceIn(0f, (canvasSize.width - cubeSize2).coerceAtLeast(0f)),
-                            velocity = v2,
-                            mass = m2
-                        )
+                        cube1 = cube1.copy(x = targetX1, velocity = v1, mass = m1)
+                        cube2 = cube2.copy(x = targetX2, velocity = v2, mass = m2)
                         
                         started = true
                     },
