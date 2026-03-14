@@ -144,8 +144,20 @@ fun Main() {
             // Friction
             val frictionAccel = 2f // m/s²
             val threshold = 0.01f
-            cube1 = cube1.copy(velocity = if (abs(cube1.velocity) < threshold) 0f else applyFriction(cube1.velocity, frictionAccel, dt))
-            cube2 = cube2.copy(velocity = if (abs(cube2.velocity) < threshold) 0f else applyFriction(cube2.velocity, frictionAccel, dt))
+            cube1 = cube1.copy(
+                velocity = if (abs(cube1.velocity) < threshold) 0f else applyFriction(
+                    cube1.velocity,
+                    frictionAccel,
+                    dt
+                )
+            )
+            cube2 = cube2.copy(
+                velocity = if (abs(cube2.velocity) < threshold) 0f else applyFriction(
+                    cube2.velocity,
+                    frictionAccel,
+                    dt
+                )
+            )
 
             // Text fields update
             v1Text = cube1.velocity.toString()
@@ -192,7 +204,11 @@ fun Main() {
                 }
 
                 drawContext.canvas.nativeCanvas.drawText(
-                    if (cube1.velocity < 0) "<- ${abs(ceil(cube1.velocity*100)/100)}" else if (cube1.velocity > 0) "${abs(ceil(cube1.velocity*100)/100)} ->" else "",
+                    if (cube1.velocity < 0) "<- ${abs(ceil(cube1.velocity * 100) / 100)}" else if (cube1.velocity > 0) "${
+                        abs(
+                            ceil(cube1.velocity * 100) / 100
+                        )
+                    } ->" else "",
                     cube1.x,
                     groundY - cubeSize1 - 40f,
                     paint
@@ -205,7 +221,11 @@ fun Main() {
                 )
 
                 drawContext.canvas.nativeCanvas.drawText(
-                    if (cube2.velocity < 0) "<- ${abs(ceil(cube2.velocity*100)/100)}" else if (cube2.velocity > 0) "${abs(ceil(cube2.velocity*100)/100)} ->" else "",
+                    if (cube2.velocity < 0) "<- ${abs(ceil(cube2.velocity * 100) / 100)}" else if (cube2.velocity > 0) "${
+                        abs(
+                            ceil(cube2.velocity * 100) / 100
+                        )
+                    } ->" else "",
                     cube2.x,
                     groundY - cubeSize2 - 40f,
                     paint
@@ -219,14 +239,14 @@ fun Main() {
 
                 drawContext.canvas.nativeCanvas.drawText(
                     "<- $canvasWidthMeters meters ->",
-                    canvasWidth/2,
+                    canvasWidth / 2,
                     canvasHeight - 100f,
                     paintSize
                 )
 
                 drawContext.canvas.nativeCanvas.drawText(
                     "Collision counter: $collisionCounter",
-                    canvasWidth/2,
+                    canvasWidth / 2,
                     100f,
                     paintSize
                 )
@@ -362,19 +382,51 @@ fun Main() {
 
                 Button(
                     onClick = {
-                        if (cube1.mass <= 0f || cube2.mass <= 0f){
-                            Toast.makeText(context, "Masses must be greater than 0", Toast.LENGTH_SHORT).show()
+                        if (cube1.mass <= 0f || cube2.mass <= 0f) {
+                            Toast.makeText(
+                                context,
+                                "Masses must be greater than 0",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             return@Button
                         }
-                        started = !started
                         cube1 = cube1.copy(
-                            velocity = v1Text.toFloatOrNull() ?: 0f,
-                            mass = m1Text.toFloatOrNull() ?: 1f
+                            velocity = v1Text.toFloatOrNull() ?: 0f.also {
+                                Toast.makeText(
+                                    context,
+                                    "Must be a rational number",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@Button
+                            },
+                            mass = m1Text.toFloatOrNull() ?: 1f.also {
+                                Toast.makeText(
+                                    context,
+                                    "Must be a rational number",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@Button
+                            },
                         )
                         cube2 = cube2.copy(
-                            velocity = v2Text.toFloatOrNull() ?: 0f,
-                            mass = m2Text.toFloatOrNull() ?: 1f
+                            velocity = v2Text.toFloatOrNull() ?: 0f.also {
+                                Toast.makeText(
+                                    context,
+                                    "Must be a rational number",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@Button
+                            },
+                            mass = m2Text.toFloatOrNull() ?: 1f.also {
+                                Toast.makeText(
+                                    context,
+                                    "Must be a rational number",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@Button
+                            }
                         )
+                        started = !started
                     },
                     modifier = Modifier
                         .weight(1f)
