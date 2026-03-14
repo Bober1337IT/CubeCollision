@@ -200,7 +200,7 @@ fun Main() {
                     color = android.graphics.Color.BLACK
                     textSize = 35f
                     isAntiAlias = true
-                    textAlign = android.graphics.Paint.Align.LEFT
+                    textAlign = android.graphics.Paint.Align.CENTER
                 }
 
                 drawContext.canvas.nativeCanvas.drawText(
@@ -209,8 +209,14 @@ fun Main() {
                             ceil(cube1.velocity * 100) / 100
                         )
                     } ->" else "",
-                    cube1.x,
+                    cube1.x + cubeSize1/2,
                     groundY - cubeSize1 - 40f,
+                    paint
+                )
+                drawContext.canvas.nativeCanvas.drawText(
+                    "${ceil(cube1.x/metersToPx*100)/100} m",
+                    cube1.x + cubeSize1/2,
+                    groundY + 50f,
                     paint
                 )
 
@@ -226,8 +232,15 @@ fun Main() {
                             ceil(cube2.velocity * 100) / 100
                         )
                     } ->" else "",
-                    cube2.x,
+                    cube2.x + cubeSize2/2,
                     groundY - cubeSize2 - 40f,
+                    paint
+                )
+
+                drawContext.canvas.nativeCanvas.drawText(
+                    "${ceil(cube2.x/metersToPx*100)/100} m",
+                    cube2.x + cubeSize2/2,
+                    groundY + 50f,
                     paint
                 )
 
