@@ -61,14 +61,18 @@ fun Main() {
 
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
 
-    var cube1 by remember { mutableStateOf(Cube(x = 200f, velocity = 0f, mass = 1f)) }
-    var cube2 by remember { mutableStateOf(Cube(x = 600f, velocity = 0f, mass = 1f)) }
+    var cube1 by remember { mutableStateOf(Cube(x = 200f, velocity = 0f, mass = 10f)) }
+    var cube2 by remember { mutableStateOf(Cube(x = 600f, velocity = 0f, mass = 10f)) }
 
     var v1Text by remember { mutableStateOf(cube1.velocity.toString()) }
     var v2Text by remember { mutableStateOf(cube2.velocity.toString()) }
 
     var m1Text by remember { mutableStateOf(cube1.mass.toString()) }
     var m2Text by remember { mutableStateOf(cube2.mass.toString()) }
+
+    var fricText by remember { mutableStateOf("20.0") }
+    var friction by remember { mutableStateOf(0f) }
+
 
     var collisionCounter by remember { mutableStateOf(0) }
 
@@ -88,9 +92,9 @@ fun Main() {
         maxSize
     ) else minSize
 
-    fun applyFriction(v: Float, aF: Float, dt: Float): Float {
+    fun applyFriction(v: Float, f: Float, m : Float,dt: Float): Float {
         val sign = if (v > 0) 1 else -1
-        val vNew = v - sign * aF * dt
+        val vNew = v - sign * f/m * dt
         return if (v * vNew < 0) 0f else vNew
     }
 
@@ -142,19 +146,20 @@ fun Main() {
             }
 
             // Friction
-            val frictionAccel = 2f // m/s²
             val threshold = 0.01f
             cube1 = cube1.copy(
                 velocity = if (abs(cube1.velocity) < threshold) 0f else applyFriction(
                     cube1.velocity,
-                    frictionAccel,
+                    friction,
+                    cube1.mass,
                     dt
                 )
             )
             cube2 = cube2.copy(
                 velocity = if (abs(cube2.velocity) < threshold) 0f else applyFriction(
                     cube2.velocity,
-                    frictionAccel,
+                    friction,
+                    cube2.mass,
                     dt
                 )
             )
@@ -174,7 +179,7 @@ fun Main() {
         // Top simulation area
         Row(
             modifier = Modifier
-                .weight(0.7f)
+                .weight(0.55f)
                 .fillMaxWidth()
         ) {
             Canvas(
@@ -300,7 +305,7 @@ fun Main() {
         // Bottom controls
         Column(
             modifier = Modifier
-                .weight(0.3f)
+                .weight(0.45f)
                 .fillMaxWidth()
                 .background(Color.Gray)
                 .padding(8.dp)
@@ -370,6 +375,55 @@ fun Main() {
                 }
             }
 
+            Row() {
+                Column(
+                    modifier = Modifier.weight(0.3f)
+                ) {
+                    Text("Friction (N)")
+                    TextField(
+                        value = fricText,
+                        onValueChange = {
+                            fricText = it
+                        },
+                        enabled = !started
+                    )
+                }
+                Spacer(modifier = Modifier.padding(4.dp))
+                // Placeholder
+                Column(
+                    modifier = Modifier.weight(0.3f)
+                ) {
+                    Text("Mass 1 (kg)")
+                    TextField(
+                        value = m1Text,
+                        onValueChange = {
+                            m1Text = it
+                            it.toFloatOrNull()?.let { m ->
+                                cube1 = cube1.copy(mass = m)
+                            }
+                        },
+                        enabled = !started
+                    )
+                }
+                Spacer(modifier = Modifier.padding(4.dp))
+                // Placeholder
+                Column(
+                    modifier = Modifier.weight(0.3f)
+                ) {
+                    Text("Mass 1 (kg)")
+                    TextField(
+                        value = m1Text,
+                        onValueChange = {
+                            m1Text = it
+                            it.toFloatOrNull()?.let { m ->
+                                cube1 = cube1.copy(mass = m)
+                            }
+                        },
+                        enabled = !started
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(
@@ -377,13 +431,14 @@ fun Main() {
             ) {
                 Button(
                     onClick = {
-                        cube1 = Cube(x = 200f, velocity = 0f, mass = 1f)
-                        cube2 = Cube(x = 600f, velocity = 0f, mass = 1f)
+                        cube1 = Cube(x = 200f, velocity = 0f, mass = 10f)
+                        cube2 = Cube(x = 600f, velocity = 0f, mass = 10f)
                         v1Text = "0.0"
                         v2Text = "0.0"
                         m1Text = "1.0"
                         m2Text = "1.0"
-                        collisionCounter = 0
+                        fricText = "20.0"
+                        collisionCounter= 0
                         started = false
                     },
                     modifier = Modifier
@@ -402,6 +457,16 @@ fun Main() {
                                 Toast.LENGTH_SHORT
                             ).show()
                             return@Button
+                        }
+                        fricText.toFloatOrNull()?.let {
+                            if (it < 0) {
+                                Toast.makeText(
+                                    context,
+                                    "Friction must be greater than 0",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@Button
+                            }
                         }
                         cube1 = cube1.copy(
                             velocity = v1Text.toFloatOrNull() ?: 0f.also {
@@ -439,6 +504,14 @@ fun Main() {
                                 return@Button
                             }
                         )
+                        friction = fricText.toFloatOrNull() ?: 0f.also {
+                            Toast.makeText(
+                                context,
+                                "Must be a rational number",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
                         started = !started
                     },
                     modifier = Modifier
