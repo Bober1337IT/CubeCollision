@@ -70,6 +70,8 @@ fun Main() {
     var m1Text by remember { mutableStateOf(cube1.mass.toString()) }
     var m2Text by remember { mutableStateOf(cube2.mass.toString()) }
 
+    var collisionCounter by remember { mutableStateOf(0) }
+
     var started: Boolean by remember { mutableStateOf(false) }
 
     // Make cube size relative to mass and other cube properties
@@ -135,6 +137,8 @@ fun Main() {
                 val overlap = (cube1.x + cubeSize1) - cube2.x
                 cube1 = cube1.copy(x = cube1.x - overlap / 2)
                 cube2 = cube2.copy(x = cube2.x + overlap / 2)
+
+                collisionCounter++
             }
 
             // Friction
@@ -217,6 +221,13 @@ fun Main() {
                     "<- $canvasWidthMeters meters ->",
                     canvasWidth/2,
                     canvasHeight - 100f,
+                    paintSize
+                )
+
+                drawContext.canvas.nativeCanvas.drawText(
+                    "Collision counter: $collisionCounter",
+                    canvasWidth/2,
+                    100f,
                     paintSize
                 )
 
