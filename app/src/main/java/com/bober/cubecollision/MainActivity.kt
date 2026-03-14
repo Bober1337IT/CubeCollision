@@ -2,6 +2,7 @@ package com.bober.cubecollision
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,12 +31,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.bober.cubecollision.ui.theme.CubeCollisionTheme
 import kotlinx.coroutines.delay
 import kotlin.math.abs
+import kotlin.math.ceil
 
 class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -54,6 +57,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Main() {
+    val context = LocalContext.current
 
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -169,10 +173,38 @@ fun Main() {
                 val canvasHeight = size.height
                 val groundY = canvasHeight * 0.8f
 
+                val paintSize = android.graphics.Paint().apply {
+                    color = android.graphics.Color.BLACK
+                    textSize = 80f
+                    isAntiAlias = true
+                    textAlign = android.graphics.Paint.Align.CENTER
+                }
+
+                val paint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.BLACK
+                    textSize = 35f
+                    isAntiAlias = true
+                    textAlign = android.graphics.Paint.Align.LEFT
+                }
+
+                drawContext.canvas.nativeCanvas.drawText(
+                    if (cube1.velocity < 0) "<- ${abs(ceil(cube1.velocity*100)/100)}" else if (cube1.velocity > 0) "${abs(ceil(cube1.velocity*100)/100)} ->" else "",
+                    cube1.x,
+                    groundY - cubeSize1 - 40f,
+                    paint
+                )
+
                 drawRect(
                     color = Color.Red,
                     topLeft = Offset(cube1.x, groundY - cubeSize1 + 4f),
                     size = Size(cubeSize1, cubeSize1)
+                )
+
+                drawContext.canvas.nativeCanvas.drawText(
+                    if (cube2.velocity < 0) "<- ${abs(ceil(cube2.velocity*100)/100)}" else if (cube2.velocity > 0) "${abs(ceil(cube2.velocity*100)/100)} ->" else "",
+                    cube2.x,
+                    groundY - cubeSize2 - 40f,
+                    paint
                 )
 
                 drawRect(
@@ -181,18 +213,11 @@ fun Main() {
                     size = Size(cubeSize2, cubeSize2)
                 )
 
-                val paint = android.graphics.Paint().apply {
-                    color = android.graphics.Color.BLACK
-                    textSize = 80f
-                    isAntiAlias = true
-                    textAlign = android.graphics.Paint.Align.LEFT
-                }
-
                 drawContext.canvas.nativeCanvas.drawText(
                     "<- $canvasWidthMeters meters ->",
-                    canvasWidth/4,
+                    canvasWidth/2,
                     canvasHeight - 100f,
-                    paint
+                    paintSize
                 )
 
                 drawLine(
@@ -325,6 +350,10 @@ fun Main() {
 
                 Button(
                     onClick = {
+                        if (cube1.mass <= 0f || cube2.mass <= 0f){
+                            Toast.makeText(context, "Masses must be greater than 0", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
                         started = !started
                         cube1 = cube1.copy(
                             velocity = v1Text.toFloatOrNull() ?: 0f,
