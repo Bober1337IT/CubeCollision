@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
@@ -81,13 +82,22 @@ fun Main() {
         maxSize
     ) else minSize
 
+    fun applyFriction(v: Float, aF: Float, dt: Float): Float {
+        val sign = if (v > 0) 1 else -1
+        val vNew = v - sign * aF * dt
+        return if (v * vNew < 0) 0f else vNew
+    }
+
+    val metersToPx = 100f // 1 meter = 100 pixels
+    val dt = 0.016f // 16 ms
+    val canvasWidthMeters = canvasSize.width / metersToPx
+
     LaunchedEffect(started) {
         while (started) {
-            val dt = 0.016f // time step
 
             // Position update
-            cube1 = cube1.copy(x = cube1.x + cube1.velocity * dt)
-            cube2 = cube2.copy(x = cube2.x - cube2.velocity * dt)
+            cube1 = cube1.copy(x = cube1.x + cube1.velocity * dt * metersToPx)
+            cube2 = cube2.copy(x = cube2.x + cube2.velocity * dt * metersToPx)
 
             // Collision with walls
             if (cube1.x < 0f) cube1 = cube1.copy(x = 0f, velocity = abs(cube1.velocity))
@@ -97,11 +107,11 @@ fun Main() {
                     velocity = -abs(cube1.velocity)
                 )
 
-            if (cube2.x < 0f) cube2 = cube2.copy(x = 0f, velocity = -abs(cube2.velocity))
+            if (cube2.x < 0f) cube2 = cube2.copy(x = 0f, velocity = abs(cube2.velocity))
             else if (cube2.x + cubeSize2 > canvasSize.width) cube2 =
                 cube2.copy(
                     x = canvasSize.width.toFloat() - cubeSize2,
-                    velocity = abs(cube2.velocity)
+                    velocity = -abs(cube2.velocity)
                 )
 
             // Collision with each other
@@ -115,23 +125,19 @@ fun Main() {
                 val v2New = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2)
 
                 cube1 = cube1.copy(velocity = v1New)
-                cube2 = cube2.copy(velocity = -v2New)
+                cube2 = cube2.copy(velocity = v2New)
 
                 // We check if the cubes overlap we move them
-                val overlap = ((cube1.x + cubeSize1) - cube2.x) * dt
+                val overlap = (cube1.x + cubeSize1) - cube2.x
                 cube1 = cube1.copy(x = cube1.x - overlap / 2)
                 cube2 = cube2.copy(x = cube2.x + overlap / 2)
             }
 
             // Friction
-            val friction = 0.5f
-            val threshold = 0.1f
-            cube1 = cube1.copy(
-                velocity = if (abs(cube1.velocity) < threshold) 0f else cube1.velocity * (1 - friction * dt)
-            )
-            cube2 = cube2.copy(
-                velocity = if (abs(cube2.velocity) < threshold) 0f else cube2.velocity * (1 - friction * dt)
-            )
+            val frictionAccel = 2f // m/s²
+            val threshold = 0.01f
+            cube1 = cube1.copy(velocity = if (abs(cube1.velocity) < threshold) 0f else applyFriction(cube1.velocity, frictionAccel, dt))
+            cube2 = cube2.copy(velocity = if (abs(cube2.velocity) < threshold) 0f else applyFriction(cube2.velocity, frictionAccel, dt))
 
             // Text fields update
             v1Text = cube1.velocity.toString()
@@ -173,6 +179,20 @@ fun Main() {
                     color = Color.Blue,
                     topLeft = Offset(cube2.x, groundY - cubeSize2 + 4f),
                     size = Size(cubeSize2, cubeSize2)
+                )
+
+                val paint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.BLACK
+                    textSize = 80f
+                    isAntiAlias = true
+                    textAlign = android.graphics.Paint.Align.LEFT
+                }
+
+                drawContext.canvas.nativeCanvas.drawText(
+                    "<- $canvasWidthMeters meters ->",
+                    canvasWidth/4,
+                    canvasHeight - 100f,
+                    paint
                 )
 
                 drawLine(
@@ -224,7 +244,7 @@ fun Main() {
                     modifier = Modifier.weight(0.6f)
                 ) {
 
-                    Text("Velocity 1")
+                    Text("Velocity 1 (m/s)")
                     TextField(
                         value = v1Text,
                         onValueChange = {
@@ -236,7 +256,7 @@ fun Main() {
                         enabled = !started
                     )
 
-                    Text("Velocity 2")
+                    Text("Velocity 2 (m/s)")
                     TextField(
                         value = v2Text,
                         onValueChange = {
@@ -255,7 +275,7 @@ fun Main() {
                     modifier = Modifier.weight(0.4f)
                 ) {
 
-                    Text("Mass 1")
+                    Text("Mass 1 (kg)")
                     TextField(
                         value = m1Text,
                         onValueChange = {
@@ -267,7 +287,7 @@ fun Main() {
                         enabled = !started
                     )
 
-                    Text("Mass 2")
+                    Text("Mass 2 (kg)")
                     TextField(
                         value = m2Text,
                         onValueChange = {
