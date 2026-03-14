@@ -219,7 +219,7 @@ fun Main() {
                     paint
                 )
                 drawContext.canvas.nativeCanvas.drawText(
-                    "${ceil(cube1.x/metersToPx*100)/100} m",
+                    "${ceil((cube1.x + cubeSize1/2)/metersToPx*100)/100} m",
                     cube1.x + cubeSize1/2,
                     groundY + 50f,
                     paint
@@ -243,7 +243,7 @@ fun Main() {
                 )
 
                 drawContext.canvas.nativeCanvas.drawText(
-                    "${ceil(cube2.x/metersToPx*100)/100} m",
+                    "${ceil((cube2.x + cubeSize2/2)/metersToPx*100)/100} m",
                     cube2.x + cubeSize2/2,
                     groundY + 50f,
                     paint
@@ -299,6 +299,14 @@ fun Main() {
                     end = Offset(canvasWidth, canvasHeight),
                     strokeWidth = 4f
                 )
+                for (i in 0..canvasWidthMeters.toInt()) {
+                    drawLine(
+                        color = Color.Black,
+                        start = Offset(i*metersToPx, groundY),
+                        end = Offset(i*metersToPx, groundY + 20f),
+                        strokeWidth = 2f
+                    )
+                }
             }
         }
 
