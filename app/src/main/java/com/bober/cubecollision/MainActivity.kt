@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.bober.cubecollision.ui.theme.CubeCollisionTheme
 import kotlinx.coroutines.delay
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.ceil
 
@@ -59,6 +60,9 @@ class MainActivity : ComponentActivity() {
 fun Main() {
     val context = LocalContext.current
 
+    val metersToPx = 100f // 1 meter = 100 pixels
+    val dt = 0.016f // 16 ms
+
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
 
     var cube1 by remember { mutableStateOf(Cube(x = 200f, velocity = 0f, mass = 10f)) }
@@ -73,10 +77,11 @@ fun Main() {
     var fricText by remember { mutableStateOf("20.0") }
     var friction by remember { mutableStateOf(0f) }
 
-
     var collisionCounter by remember { mutableStateOf(0) }
 
     var started: Boolean by remember { mutableStateOf(false) }
+
+    val canvasWidthMeters = canvasSize.width / metersToPx
 
     // Make cube size relative to mass and other cube properties
     val minSize = 40f
@@ -92,15 +97,17 @@ fun Main() {
         maxSize
     ) else minSize
 
-    fun applyFriction(v: Float, f: Float, m : Float,dt: Float): Float {
+    var lengthCube1Text by remember { mutableStateOf(((cube1.x + cubeSize1 / 2) / metersToPx).toString()) }
+    var lengthCube2Text by remember { mutableStateOf(((cube2.x + cubeSize2 / 2) / metersToPx).toString()) }
+
+    fun String.robustToFloat(): Float? = this.replace(',', '.').toFloatOrNull()
+    fun Float.format(): String = String.format(Locale.US, "%.2f", this)
+
+    fun applyFriction(v: Float, f: Float, m: Float, dt: Float): Float {
         val sign = if (v > 0) 1 else -1
-        val vNew = v - sign * f/m * dt
+        val vNew = v - sign * f / m * dt
         return if (v * vNew < 0) 0f else vNew
     }
-
-    val metersToPx = 100f // 1 meter = 100 pixels
-    val dt = 0.016f // 16 ms
-    val canvasWidthMeters = canvasSize.width / metersToPx
 
     LaunchedEffect(started) {
         while (started) {
@@ -165,8 +172,10 @@ fun Main() {
             )
 
             // Text fields update
-            v1Text = cube1.velocity.toString()
-            v2Text = cube2.velocity.toString()
+            v1Text = cube1.velocity.format()
+            v2Text = cube2.velocity.format()
+            lengthCube1Text = ((cube1.x + cubeSize1 / 2) / metersToPx).format()
+            lengthCube2Text = ((cube2.x + cubeSize2 / 2) / metersToPx).format()
 
             delay(16)
         }
@@ -214,13 +223,13 @@ fun Main() {
                             ceil(cube1.velocity * 100) / 100
                         )
                     } ->" else "",
-                    cube1.x + cubeSize1/2,
+                    cube1.x + cubeSize1 / 2,
                     groundY - cubeSize1 - 40f,
                     paint
                 )
                 drawContext.canvas.nativeCanvas.drawText(
-                    "${ceil((cube1.x + cubeSize1/2)/metersToPx*100)/100} m",
-                    cube1.x + cubeSize1/2,
+                    "${ceil((cube1.x + cubeSize1 / 2) / metersToPx * 100) / 100} m",
+                    cube1.x + cubeSize1 / 2,
                     groundY + 50f,
                     paint
                 )
@@ -237,14 +246,14 @@ fun Main() {
                             ceil(cube2.velocity * 100) / 100
                         )
                     } ->" else "",
-                    cube2.x + cubeSize2/2,
+                    cube2.x + cubeSize2 / 2,
                     groundY - cubeSize2 - 40f,
                     paint
                 )
 
                 drawContext.canvas.nativeCanvas.drawText(
-                    "${ceil((cube2.x + cubeSize2/2)/metersToPx*100)/100} m",
-                    cube2.x + cubeSize2/2,
+                    "${ceil((cube2.x + cubeSize2 / 2) / metersToPx * 100) / 100} m",
+                    cube2.x + cubeSize2 / 2,
                     groundY + 50f,
                     paint
                 )
@@ -302,8 +311,8 @@ fun Main() {
                 for (i in 0..canvasWidthMeters.toInt()) {
                     drawLine(
                         color = Color.Black,
-                        start = Offset(i*metersToPx, groundY),
-                        end = Offset(i*metersToPx, groundY + 20f),
+                        start = Offset(i * metersToPx, groundY),
+                        end = Offset(i * metersToPx, groundY + 20f),
                         strokeWidth = 2f
                     )
                 }
@@ -331,7 +340,7 @@ fun Main() {
                         value = v1Text,
                         onValueChange = {
                             v1Text = it
-                            it.toFloatOrNull()?.let { v ->
+                            it.robustToFloat()?.let { v ->
                                 cube1 = cube1.copy(velocity = v)
                             }
                         },
@@ -343,7 +352,7 @@ fun Main() {
                         value = v2Text,
                         onValueChange = {
                             v2Text = it
-                            it.toFloatOrNull()?.let { v ->
+                            it.robustToFloat()?.let { v ->
                                 cube2 = cube2.copy(velocity = v)
                             }
                         },
@@ -362,7 +371,7 @@ fun Main() {
                         value = m1Text,
                         onValueChange = {
                             m1Text = it
-                            it.toFloatOrNull()?.let { m ->
+                            it.robustToFloat()?.let { m ->
                                 cube1 = cube1.copy(mass = m)
                             }
                         },
@@ -374,7 +383,7 @@ fun Main() {
                         value = m2Text,
                         onValueChange = {
                             m2Text = it
-                            it.toFloatOrNull()?.let { m ->
+                            it.robustToFloat()?.let { m ->
                                 cube2 = cube2.copy(mass = m)
                             }
                         },
@@ -397,34 +406,32 @@ fun Main() {
                     )
                 }
                 Spacer(modifier = Modifier.padding(4.dp))
-                // Placeholder
                 Column(
                     modifier = Modifier.weight(0.3f)
                 ) {
-                    Text("Mass 1 (kg)")
+                    Text("Position 1 (m)")
                     TextField(
-                        value = m1Text,
+                        value = lengthCube1Text,
                         onValueChange = {
-                            m1Text = it
-                            it.toFloatOrNull()?.let { m ->
-                                cube1 = cube1.copy(mass = m)
+                            lengthCube1Text = it
+                            it.robustToFloat()?.let { l ->
+                                cube1 = cube1.copy(x = (l * metersToPx - cubeSize1 / 2).coerceIn(0f, (canvasSize.width - cubeSize1).coerceAtLeast(0f)))
                             }
                         },
                         enabled = !started
                     )
                 }
                 Spacer(modifier = Modifier.padding(4.dp))
-                // Placeholder
                 Column(
                     modifier = Modifier.weight(0.3f)
                 ) {
-                    Text("Mass 1 (kg)")
+                    Text("Position 2 (m)")
                     TextField(
-                        value = m1Text,
+                        value = lengthCube2Text,
                         onValueChange = {
-                            m1Text = it
-                            it.toFloatOrNull()?.let { m ->
-                                cube1 = cube1.copy(mass = m)
+                            lengthCube2Text = it
+                            it.robustToFloat()?.let { l ->
+                                cube2 = cube2.copy(x = (l * metersToPx - cubeSize2 / 2).coerceIn(0f, (canvasSize.width - cubeSize2).coerceAtLeast(0f)))
                             }
                         },
                         enabled = !started
@@ -443,10 +450,12 @@ fun Main() {
                         cube2 = Cube(x = 600f, velocity = 0f, mass = 10f)
                         v1Text = "0.0"
                         v2Text = "0.0"
-                        m1Text = "1.0"
-                        m2Text = "1.0"
+                        m1Text = "10.0"
+                        m2Text = "10.0"
                         fricText = "20.0"
-                        collisionCounter= 0
+                        lengthCube1Text = "2.5"
+                        lengthCube2Text = "6.5"
+                        collisionCounter = 0
                         started = false
                     },
                     modifier = Modifier
@@ -458,69 +467,65 @@ fun Main() {
 
                 Button(
                     onClick = {
-                        if (cube1.mass <= 0f || cube2.mass <= 0f) {
-                            Toast.makeText(
-                                context,
-                                "Masses must be greater than 0",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                        if (started) {
+                            started = false
                             return@Button
                         }
-                        fricText.toFloatOrNull()?.let {
-                            if (it < 0) {
-                                Toast.makeText(
-                                    context,
-                                    "Friction must be greater than 0",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@Button
-                            }
+
+                        // Validate all numerical inputs first
+                        val l1 = lengthCube1Text.robustToFloat() ?: 2.5f.also {
+                            Toast.makeText(context, "Must be a rational number", Toast.LENGTH_SHORT).show()
+                            return@Button
                         }
+                        val l2 = lengthCube2Text.robustToFloat() ?: 6.5f.also {
+                            Toast.makeText(context, "Must be a rational number", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val v1 = v1Text.robustToFloat() ?: 0f.also {
+                            Toast.makeText(context, "Must be a rational number", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val v2 = v2Text.robustToFloat() ?: 0f.also {
+                            Toast.makeText(context, "Must be a rational number", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val m1 = m1Text.robustToFloat() ?: 1f.also {
+                            Toast.makeText(context, "Must be a rational number", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val m2 = m2Text.robustToFloat() ?: 1f.also {
+                            Toast.makeText(context, "Must be a rational number", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val f = fricText.robustToFloat() ?: 0f.also {
+                            Toast.makeText(context, "Must be a rational number", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        // Check logical constraints
+                        if (m1 <= 0f || m2 <= 0f) {
+                            Toast.makeText(context, "Masses must be greater than 0", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        if (f < 0f) {
+                            Toast.makeText(context, "Friction must be greater than 0", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        // Update simulation state with validated values and wall constraints
+                        friction = f
                         cube1 = cube1.copy(
-                            velocity = v1Text.toFloatOrNull() ?: 0f.also {
-                                Toast.makeText(
-                                    context,
-                                    "Must be a rational number",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@Button
-                            },
-                            mass = m1Text.toFloatOrNull() ?: 1f.also {
-                                Toast.makeText(
-                                    context,
-                                    "Must be a rational number",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@Button
-                            },
+                            x = (l1 * metersToPx - cubeSize1 / 2).coerceIn(0f, (canvasSize.width - cubeSize1).coerceAtLeast(0f)),
+                            velocity = v1,
+                            mass = m1
                         )
                         cube2 = cube2.copy(
-                            velocity = v2Text.toFloatOrNull() ?: 0f.also {
-                                Toast.makeText(
-                                    context,
-                                    "Must be a rational number",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@Button
-                            },
-                            mass = m2Text.toFloatOrNull() ?: 1f.also {
-                                Toast.makeText(
-                                    context,
-                                    "Must be a rational number",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@Button
-                            }
+                            x = (l2 * metersToPx - cubeSize2 / 2).coerceIn(0f, (canvasSize.width - cubeSize2).coerceAtLeast(0f)),
+                            velocity = v2,
+                            mass = m2
                         )
-                        friction = fricText.toFloatOrNull() ?: 0f.also {
-                            Toast.makeText(
-                                context,
-                                "Must be a rational number",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            return@Button
-                        }
-                        started = !started
+                        
+                        started = true
                     },
                     modifier = Modifier
                         .weight(1f)
