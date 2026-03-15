@@ -63,7 +63,9 @@ fun Main() {
     val context = LocalContext.current
 
     val metersToPx = 100f // 1 meter = 100 pixels
-    val dt = 0.016f // 16 ms
+    val renderDt = 0.016f      // 60 FPS render
+    val physicsDt = 0.002f
+    val steps = (renderDt / physicsDt).toInt()
     val g = 9.81f // gravity
 
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
@@ -116,63 +118,69 @@ fun Main() {
     LaunchedEffect(started) {
         while (started) {
 
-            // Position update
-            cube1 = cube1.copy(x = cube1.x + cube1.velocity * dt * metersToPx)
-            cube2 = cube2.copy(x = cube2.x + cube2.velocity * dt * metersToPx)
+            repeat(steps) {
+                // Position update
+                cube1 = cube1.copy(x = cube1.x + cube1.velocity * physicsDt * metersToPx)
+                cube2 = cube2.copy(x = cube2.x + cube2.velocity * physicsDt * metersToPx)
 
-            // Collision with walls
-            if (cube1.x < 0f) cube1 = cube1.copy(x = 0f, velocity = abs(cube1.velocity))
-            else if (cube1.x + cubeSize1 > canvasSize.width) cube1 =
-                cube1.copy(
-                    x = canvasSize.width.toFloat() - cubeSize1,
-                    velocity = -abs(cube1.velocity)
+                // Collision with walls
+                if (cube1.x < 0f) cube1 = cube1.copy(x = 0f, velocity = abs(cube1.velocity))
+                else if (cube1.x + cubeSize1 > canvasSize.width) cube1 =
+                    cube1.copy(
+                        x = canvasSize.width.toFloat() - cubeSize1,
+                        velocity = -abs(cube1.velocity)
+                    )
+
+                if (cube2.x < 0f) cube2 = cube2.copy(x = 0f, velocity = abs(cube2.velocity))
+                else if (cube2.x + cubeSize2 > canvasSize.width) cube2 =
+                    cube2.copy(
+                        x = canvasSize.width.toFloat() - cubeSize2,
+                        velocity = -abs(cube2.velocity)
+                    )
+
+                // Collision with each other
+                if  (
+                    cube1.x < cube2.x + cubeSize2 &&
+                    cube1.x + cubeSize1 > cube2.x &&
+                    cube1.velocity > cube2.velocity
+                ) {
+                    val m1 = cube1.mass
+                    val m2 = cube2.mass
+                    val v1 = cube1.velocity
+                    val v2 = cube2.velocity
+
+                    val v1New = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2)
+                    val v2New = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2)
+
+                    cube1 = cube1.copy(velocity = v1New)
+                    cube2 = cube2.copy(velocity = v2New)
+
+                    // We check if the cubes overlap we move them
+                    val overlap = (cube1.x + cubeSize1) - cube2.x
+                    cube1 = cube1.copy(x = cube1.x - overlap / 2)
+                    cube2 = cube2.copy(x = cube2.x + overlap / 2)
+
+                    collisionCounter++
+                    MediaPlayer.create(context, R.raw.collision).start()
+                }
+
+                // Friction
+                val threshold = 0.01f
+                cube1 = cube1.copy(
+                    velocity = if (abs(cube1.velocity) < threshold) 0f else applyFriction(
+                        cube1.velocity,
+                        mu,
+                        physicsDt
+                    )
                 )
-
-            if (cube2.x < 0f) cube2 = cube2.copy(x = 0f, velocity = abs(cube2.velocity))
-            else if (cube2.x + cubeSize2 > canvasSize.width) cube2 =
-                cube2.copy(
-                    x = canvasSize.width.toFloat() - cubeSize2,
-                    velocity = -abs(cube2.velocity)
+                cube2 = cube2.copy(
+                    velocity = if (abs(cube2.velocity) < threshold) 0f else applyFriction(
+                        cube2.velocity,
+                        mu,
+                        physicsDt
+                    )
                 )
-
-            // Collision with each other
-            if (cube1.x + cubeSize1 >= cube2.x && cube1.x <= cube2.x + cubeSize2) {
-                val m1 = cube1.mass
-                val m2 = cube2.mass
-                val v1 = cube1.velocity
-                val v2 = cube2.velocity
-
-                val v1New = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2)
-                val v2New = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2)
-
-                cube1 = cube1.copy(velocity = v1New)
-                cube2 = cube2.copy(velocity = v2New)
-
-                // We check if the cubes overlap we move them
-                val overlap = (cube1.x + cubeSize1) - cube2.x
-                cube1 = cube1.copy(x = cube1.x - overlap / 2)
-                cube2 = cube2.copy(x = cube2.x + overlap / 2)
-
-                collisionCounter++
-                MediaPlayer.create(context, R.raw.collision).start()
             }
-
-            // Friction
-            val threshold = 0.01f
-            cube1 = cube1.copy(
-                velocity = if (abs(cube1.velocity) < threshold) 0f else applyFriction(
-                    cube1.velocity,
-                    mu,
-                    dt
-                )
-            )
-            cube2 = cube2.copy(
-                velocity = if (abs(cube2.velocity) < threshold) 0f else applyFriction(
-                    cube2.velocity,
-                    mu,
-                    dt
-                )
-            )
 
             // Text fields update
             v1Text = cube1.velocity.format()
