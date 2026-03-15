@@ -1,6 +1,7 @@
 package com.bober.cubecollision
 
 import android.annotation.SuppressLint
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -150,6 +151,7 @@ fun Main() {
                 cube2 = cube2.copy(x = cube2.x + overlap / 2)
 
                 collisionCounter++
+                MediaPlayer.create(context, R.raw.collision).start()
             }
 
             // Friction
