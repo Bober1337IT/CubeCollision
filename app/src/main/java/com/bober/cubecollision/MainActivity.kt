@@ -124,19 +124,31 @@ fun Main() {
                 cube2 = cube2.copy(x = cube2.x + cube2.velocity * physicsDt * metersToPx)
 
                 // Collision with walls
-                if (cube1.x < 0f) cube1 = cube1.copy(x = 0f, velocity = abs(cube1.velocity))
-                else if (cube1.x + cubeSize1 > canvasSize.width) cube1 =
-                    cube1.copy(
+                if (cube1.x < 0f) {
+                    cube1 = cube1.copy(x = 0f, velocity = abs(cube1.velocity))
+                    collisionCounter++
+                    MediaPlayer.create(context, R.raw.collision).start()
+                } else if (cube1.x + cubeSize1 > canvasSize.width) {
+                    cube1 = cube1.copy(
                         x = canvasSize.width.toFloat() - cubeSize1,
                         velocity = -abs(cube1.velocity)
                     )
+                    collisionCounter++
+                    MediaPlayer.create(context, R.raw.collision).start()
+                }
 
-                if (cube2.x < 0f) cube2 = cube2.copy(x = 0f, velocity = abs(cube2.velocity))
-                else if (cube2.x + cubeSize2 > canvasSize.width) cube2 =
-                    cube2.copy(
+                if (cube2.x < 0f) {
+                    cube2 = cube2.copy(x = 0f, velocity = abs(cube2.velocity))
+                    collisionCounter++
+                    MediaPlayer.create(context, R.raw.collision).start()
+                } else if (cube2.x + cubeSize2 > canvasSize.width) {
+                    cube2 = cube2.copy(
                         x = canvasSize.width.toFloat() - cubeSize2,
                         velocity = -abs(cube2.velocity)
                     )
+                    collisionCounter++
+                    MediaPlayer.create(context, R.raw.collision).start()
+                }
 
                 // Collision with each other
                 if  (
