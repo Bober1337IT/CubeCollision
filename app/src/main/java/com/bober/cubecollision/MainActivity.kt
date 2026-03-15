@@ -69,6 +69,8 @@ fun Main() {
     val steps = (renderDt / physicsDt).toInt()
     val g = 9.81f // gravity
 
+    val collisionSound = remember { SoundManager(context, R.raw.collision) }
+
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
 
     var cube1 by remember { mutableStateOf(Cube(x = 200f, velocity = 0f, mass = 10f)) }
@@ -131,27 +133,27 @@ fun Main() {
                 if (cube1.x < 0f) {
                     cube1 = cube1.copy(x = 0f, velocity = abs(cube1.velocity))
                     collisionCounter++
-                    MediaPlayer.create(context, R.raw.collision).start()
+                    collisionSound.play()
                 } else if (cube1.x + cubeSize1 > canvasSize.width) {
                     cube1 = cube1.copy(
                         x = canvasSize.width.toFloat() - cubeSize1,
                         velocity = -abs(cube1.velocity)
                     )
                     collisionCounter++
-                    MediaPlayer.create(context, R.raw.collision).start()
+                    collisionSound.play()
                 }
 
                 if (cube2.x < 0f) {
                     cube2 = cube2.copy(x = 0f, velocity = abs(cube2.velocity))
                     collisionCounter++
-                    MediaPlayer.create(context, R.raw.collision).start()
+                    collisionSound.play()
                 } else if (cube2.x + cubeSize2 > canvasSize.width) {
                     cube2 = cube2.copy(
                         x = canvasSize.width.toFloat() - cubeSize2,
                         velocity = -abs(cube2.velocity)
                     )
                     collisionCounter++
-                    MediaPlayer.create(context, R.raw.collision).start()
+                    collisionSound.play()
                 }
 
                 // Collision with each other
@@ -177,7 +179,7 @@ fun Main() {
                     cube2 = cube2.copy(x = cube2.x + overlap / 2)
 
                     collisionCounter++
-                    MediaPlayer.create(context, R.raw.collision).start()
+                    collisionSound.play()
                 }
 
                 // Friction
