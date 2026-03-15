@@ -41,6 +41,7 @@ import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.ceil
+import kotlin.math.sign
 
 class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -63,6 +64,7 @@ fun Main() {
 
     val metersToPx = 100f // 1 meter = 100 pixels
     val dt = 0.016f // 16 ms
+    val g = 9.81f // gravity
 
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -75,8 +77,8 @@ fun Main() {
     var m1Text by remember { mutableStateOf(cube1.mass.toString()) }
     var m2Text by remember { mutableStateOf(cube2.mass.toString()) }
 
-    var fricText by remember { mutableStateOf("20.0") }
-    var friction by remember { mutableStateOf(0f) }
+    var fricText by remember { mutableStateOf("0.2") }
+    var mu by remember { mutableStateOf(0f) } // friction coefficient
 
     var collisionCounter by remember { mutableStateOf(0) }
 
@@ -104,9 +106,10 @@ fun Main() {
     fun String.robustToFloat(): Float? = this.replace(',', '.').toFloatOrNull()
     fun Float.format(): String = String.format(Locale.US, "%.2f", this)
 
-    fun applyFriction(v: Float, f: Float, m: Float, dt: Float): Float {
-        val sign = if (v > 0) 1 else -1
-        val vNew = v - sign * f / m * dt
+    fun applyFriction(v: Float, mu: Float, dt: Float): Float {
+        val sign = v.sign
+        val a = mu * g
+        val vNew = v - sign * a * dt
         return if (v * vNew < 0) 0f else vNew
     }
 
@@ -159,16 +162,14 @@ fun Main() {
             cube1 = cube1.copy(
                 velocity = if (abs(cube1.velocity) < threshold) 0f else applyFriction(
                     cube1.velocity,
-                    friction,
-                    cube1.mass,
+                    mu,
                     dt
                 )
             )
             cube2 = cube2.copy(
                 velocity = if (abs(cube2.velocity) < threshold) 0f else applyFriction(
                     cube2.velocity,
-                    friction,
-                    cube2.mass,
+                    mu,
                     dt
                 )
             )
@@ -398,7 +399,7 @@ fun Main() {
                 Column(
                     modifier = Modifier.weight(0.3f)
                 ) {
-                    Text("Friction (N)")
+                    Text("Friction (μ)")
                     TextField(
                         value = fricText,
                         onValueChange = {
@@ -462,7 +463,7 @@ fun Main() {
                         v2Text = "0.0"
                         m1Text = "10.0"
                         m2Text = "10.0"
-                        fricText = "20.0"
+                        fricText = "0.2"
                         lengthCube1Text = "2.5"
                         lengthCube2Text = "6.5"
                         collisionCounter = 0
@@ -532,7 +533,7 @@ fun Main() {
                         }
 
                         // Update simulation state with validated values
-                        friction = f
+                        mu = f
                         cube1 = cube1.copy(x = targetX1, velocity = v1, mass = m1)
                         cube2 = cube2.copy(x = targetX2, velocity = v2, mass = m2)
                         
