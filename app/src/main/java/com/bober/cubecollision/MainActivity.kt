@@ -521,6 +521,12 @@ fun Main() {
                             return@Button
                         }
 
+                        // Check cube positions
+                        if (cube1.x > cube2.x) {
+                            Toast.makeText(context, "Red cube must be on the left", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
                         // Check logical constraints
                         if (m1 <= 0f || m2 <= 0f) {
                             Toast.makeText(context, "Masses must be greater than 0", Toast.LENGTH_SHORT).show()
