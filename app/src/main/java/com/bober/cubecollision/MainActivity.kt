@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.bober.cubecollision.ui.theme.CubeCollisionTheme
 import kotlinx.coroutines.delay
 import java.util.Locale
@@ -63,7 +64,7 @@ fun Main() {
     val context = LocalContext.current
 
     val metersToPx = 100f // 1 meter = 100 pixels
-    val renderDt = 0.016f      // 60 FPS render
+    val renderDt = 0.016f // 60 FPS render
     val physicsDt = 0.002f
     val steps = (renderDt / physicsDt).toInt()
     val g = 9.81f // gravity
@@ -79,7 +80,10 @@ fun Main() {
     var m1Text by remember { mutableStateOf(cube1.mass.toString()) }
     var m2Text by remember { mutableStateOf(cube2.mass.toString()) }
 
-    var fricText by remember { mutableStateOf("0.2") }
+    var restitutionText by remember { mutableStateOf("0.8") }
+    var e by remember { mutableStateOf(restitutionText.toFloat()) } // coefficient of restitution
+
+    var frictionText by remember { mutableStateOf("0.2") }
     var mu by remember { mutableStateOf(0f) } // friction coefficient
 
     var collisionCounter by remember { mutableStateOf(0) }
@@ -161,8 +165,8 @@ fun Main() {
                     val v1 = cube1.velocity
                     val v2 = cube2.velocity
 
-                    val v1New = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2)
-                    val v2New = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2)
+                    val v1New = ((m1 - e*m2)*v1 + (1+e)*m2*v2)/(m1 + m2)
+                    val v2New = ((m2 - e*m1)*v2 + (1+e)*m1*v1)/(m1 + m2)
 
                     cube1 = cube1.copy(velocity = v1New)
                     cube2 = cube2.copy(velocity = v2New)
@@ -355,10 +359,10 @@ fun Main() {
             ) {
 
                 Column(
-                    modifier = Modifier.weight(0.6f)
+                    modifier = Modifier.weight(0.33f)
                 ) {
 
-                    Text("Velocity 1 (m/s)")
+                    Text("Velocity 1 (m/s)", fontSize = 14.sp)
                     TextField(
                         value = v1Text,
                         onValueChange = {
@@ -370,7 +374,7 @@ fun Main() {
                         enabled = !started
                     )
 
-                    Text("Velocity 2 (m/s)")
+                    Text("Velocity 2 (m/s)", fontSize = 14.sp)
                     TextField(
                         value = v2Text,
                         onValueChange = {
@@ -386,10 +390,10 @@ fun Main() {
                 Spacer(modifier = Modifier.padding(4.dp))
 
                 Column(
-                    modifier = Modifier.weight(0.4f)
+                    modifier = Modifier.weight(0.33f)
                 ) {
 
-                    Text("Mass 1 (kg)")
+                    Text("Mass 1 (kg)", fontSize = 14.sp)
                     TextField(
                         value = m1Text,
                         onValueChange = {
@@ -401,7 +405,7 @@ fun Main() {
                         enabled = !started
                     )
 
-                    Text("Mass 2 (kg)")
+                    Text("Mass 2 (kg)", fontSize = 14.sp)
                     TextField(
                         value = m2Text,
                         onValueChange = {
@@ -413,26 +417,14 @@ fun Main() {
                         enabled = !started
                     )
                 }
-            }
 
-            Row() {
-                Column(
-                    modifier = Modifier.weight(0.3f)
-                ) {
-                    Text("Friction (μ)")
-                    TextField(
-                        value = fricText,
-                        onValueChange = {
-                            fricText = it
-                        },
-                        enabled = !started
-                    )
-                }
                 Spacer(modifier = Modifier.padding(4.dp))
+
                 Column(
-                    modifier = Modifier.weight(0.3f)
+                    modifier = Modifier.weight(0.33f)
                 ) {
-                    Text("Position 1 (m)")
+
+                    Text("Position 1 (m)", fontSize = 14.sp)
                     TextField(
                         value = lengthCube1Text,
                         onValueChange = {
@@ -447,12 +439,8 @@ fun Main() {
                         },
                         enabled = !started
                     )
-                }
-                Spacer(modifier = Modifier.padding(4.dp))
-                Column(
-                    modifier = Modifier.weight(0.3f)
-                ) {
-                    Text("Position 2 (m)")
+
+                    Text("Position 2 (m)", fontSize = 14.sp)
                     TextField(
                         value = lengthCube2Text,
                         onValueChange = {
@@ -464,6 +452,34 @@ fun Main() {
                                     cube2 = cube2.copy(x = newX)
                                 }
                             }
+                        },
+                        enabled = !started
+                    )
+                }
+            }
+
+            Row() {
+                Column(
+                    modifier = Modifier.weight(0.5f)
+                ) {
+                    Text("Friction (μ)", fontSize = 14.sp)
+                    TextField(
+                        value = frictionText,
+                        onValueChange = {
+                            frictionText = it
+                        },
+                        enabled = !started
+                    )
+                }
+                Spacer(modifier = Modifier.padding(4.dp))
+                Column(
+                    modifier = Modifier.weight(0.5f)
+                ) {
+                    Text("Elasticity (e)", fontSize = 14.sp)
+                    TextField(
+                        value = restitutionText,
+                        onValueChange = {
+                            restitutionText = it
                         },
                         enabled = !started
                     )
@@ -483,7 +499,8 @@ fun Main() {
                         v2Text = "0.0"
                         m1Text = "10.0"
                         m2Text = "10.0"
-                        fricText = "0.2"
+                        frictionText = "0.2"
+                        restitutionText = "0.8"
                         lengthCube1Text = "2.5"
                         lengthCube2Text = "6.5"
                         collisionCounter = 0
@@ -528,7 +545,11 @@ fun Main() {
                             Toast.makeText(context, "Must be a rational number", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
-                        val f = fricText.robustToFloat() ?: 0f.also {
+                        val f = frictionText.robustToFloat() ?: 0f.also {
+                            Toast.makeText(context, "Must be a rational number", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val res = restitutionText.robustToFloat() ?: 1f.also {
                             Toast.makeText(context, "Must be a rational number", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
@@ -548,6 +569,10 @@ fun Main() {
                             Toast.makeText(context, "Friction must be greater than 0", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
+                        if (res !in 0f..1f) {
+                            Toast.makeText(context, "Elasticity must be between 0 and 1", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
 
                         // Calculate target positions and check for placement overlap
                         val targetX1 = (l1 * metersToPx - cubeSize1 / 2).coerceIn(0f, (canvasSize.width - cubeSize1).coerceAtLeast(0f))
@@ -559,6 +584,7 @@ fun Main() {
                         }
 
                         // Update simulation state with validated values
+                        e = res
                         mu = f
                         cube1 = cube1.copy(x = targetX1, velocity = v1, mass = m1)
                         cube2 = cube2.copy(x = targetX2, velocity = v2, mass = m2)
